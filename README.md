@@ -1,4 +1,4 @@
-# Chatboard v0.1.4
+# Chatboard v0.1.5
 
 A lightweight personal board for organizing ChatGPT conversations without changing anything inside ChatGPT itself.
 
@@ -8,7 +8,7 @@ A lightweight personal board for organizing ChatGPT conversations without changi
 
 **Description:** Personal bookmark board for organizing and syncing ChatGPT conversations.
 
-## What v0.1.4 does
+## What v0.1.5 does
 
 - Add ChatGPT conversation bookmarks.
 - Give every bookmark its own independent Chatboard title.
@@ -30,7 +30,9 @@ A lightweight personal board for organizing ChatGPT conversations without changi
 - PWA manifest and service worker.
 - Visible version number in the menu.
 - Add Chat lives with the top-right controls and opens as a centered modal over the board.
-- One-click browser bookmarklet capture support and URL capture support for an iOS Shortcut.
+- One-click browser bookmarklet capture support, with setup built into the Chatboard menu for desktop and mobile Safari.
+- URL capture support for a future iOS Share Sheet Shortcut.
+- Arrange icon remains visibly active while Arrange mode is on.
 
 ## 1. Upload to GitHub Pages
 
@@ -78,26 +80,24 @@ Chatboard accepts:
 
 `?add=1&url=CHAT_URL&title=CHAT_TITLE`
 
-After deployment, a browser bookmarklet or iOS Shortcut can use that to pre-fill the Add Chat sheet.
+Open **Menu → Bookmarklet** inside Chatboard for the current capture setup. The app generates the bookmarklet using its own deployed URL, so the code does not need to be copied from this README.
 
-### Mac bookmarklet
+### Desktop
 
-Create a bookmark whose URL is:
+Drag **Save to Chatboard** from the Bookmarklet screen to the browser bookmarks bar. While viewing a ChatGPT conversation, click it.
 
-```text
-javascript:(()=>{const b='https://mojocolony.github.io/chatboard/';const t=document.title.replace(/^\s*ChatGPT\s*[-|:]\s*/i,'').replace(/\s*[-|:]\s*ChatGPT\s*$/i,'').trim()||'ChatGPT conversation';window.open(b+'?add=1&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(t),'_blank')})()
-```
+### iPhone / iPad Safari
 
-While viewing a ChatGPT conversation, click the bookmarklet. Chatboard opens in a new tab with the chat URL and title pre-filled. The original ChatGPT conversation stays open.
+Use **Copy bookmarklet** in Chatboard, then create/edit a Safari bookmark named `Save to Chatboard` and replace its address with the copied code. Run that bookmark while viewing a ChatGPT conversation in Safari.
 
-In Chrome on Mac: show the bookmarks bar, add any bookmark, rename it `Save to Chatboard`, then edit its URL and paste the JavaScript above.
+Bookmarklets run in browser pages. Capturing directly from the native ChatGPT app requires a Share Sheet Shortcut, which is intentionally separate from the bookmarklet.
 
 ## Notes
 
 - Chatboard never renames, archives, hides, or deletes the real ChatGPT conversation.
 - `Hide`, `Archive`, and `Delete permanently` affect only the bookmark in Chatboard.
 - Local changes are saved immediately even when Dropbox is unavailable; sync retries when the app returns online.
-- Because this is a single-user personal app, v0.1.4 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
+- Because this is a single-user personal app, v0.1.5 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
 
 
 ### Hidden vs Archive

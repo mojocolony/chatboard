@@ -84,7 +84,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .brand-icon { display: inline-flex; color: var(--accent); }
 .header-actions { display: flex; align-items: center; gap: 2px; }
-.arrange-toggle--active { background: var(--accent); color: var(--bg); }
 .icon-button {
   display: inline-grid;
   width: 44px;
@@ -96,6 +95,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   background: transparent;
   cursor: pointer;
 }
+.icon-button.arrange-toggle--active { background: var(--accent); color: var(--bg); }
 .icon { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 .sync-line {
@@ -419,3 +419,33 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     max-height: min(82vh, 680px);
   }
 }
+
+/* v0.1.5 bookmarklet settings */
+.settings-subheading {
+  margin: 10px 0 9px;
+  color: var(--text);
+  font-size: .78em;
+  font-weight: 600;
+}
+.bookmarklet-link {
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  place-items: center;
+  margin-bottom: 12px;
+  border: 1px solid var(--line-dark);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text);
+  text-decoration: none;
+  cursor: grab;
+}
+.bookmarklet-link:active { cursor: grabbing; }
+.setup-steps {
+  margin: 0 0 18px;
+  padding-left: 1.5em;
+  color: var(--muted);
+  font-size: .72em;
+}
+.setup-steps li { margin: 0 0 8px; padding-left: .2em; }
+.bookmarklet-footnote { margin-top: 14px; }

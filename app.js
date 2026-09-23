@@ -8,7 +8,7 @@ import {
   uploadBoard,
 } from './dropbox.js';
 
-const VERSION = '0.1.4';
+const VERSION = '0.1.5';
 const STORAGE_KEY = 'chatboard.board.v1';
 const FONT_KEY = 'chatboard.fontScale.v1';
 const VIEW_KEY = 'chatboard.view.v1';
@@ -45,6 +45,29 @@ let pointerDrag = null;
 
 function uid(prefix = 'id') {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function bookmarkletCode() {
+  const base = new URL('./', location.href).href;
+  return `javascript:(()=>{const b=${JSON.stringify(base)};const t=(document.title||'ChatGPT conversation').replace(/^\s*ChatGPT\s*[-|:]\s*/i,'').replace(/\s*[-|:]\s*ChatGPT\s*$/i,'').trim()||'ChatGPT conversation';window.open(b+'?add=1&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(t),'_blank')})()`;
+}
+
+async function copyText(text, successMessage = 'Copied.') {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(successMessage);
+    return;
+  } catch {}
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.append(area);
+  area.select();
+  try { document.execCommand('copy'); toast(successMessage); }
+  catch { toast('Copy failed. Select the code manually.'); }
+  area.remove();
 }
 
 function defaultBoard() {
@@ -453,6 +476,7 @@ function renderMenu() {
     item('Hidden', totalFor('hidden') ? `${totalFor('hidden')} · temporary` : 'Temporary', () => setView('hidden')),
     item('Archive', totalFor('archived') ? `${totalFor('archived')} · long-term` : 'Long-term', () => setView('archived')),
     item('Add category', '', () => openCategorySheet()),
+    item('Bookmarklet', 'Desktop & mobile setup', () => openBookmarkletSheet()),
     item(isConnected() ? 'Dropbox' : 'Connect Dropbox', isConnected() ? 'Connected' : '', () => openDropboxSheet()),
   );
 
@@ -611,6 +635,7 @@ function openAddSheet(prefill = {}) {
 
 function openEditSheet(bookmark) { sheet = { type: 'edit', bookmarkId: bookmark.id }; render(); }
 function openCategorySheet(category = null) { sheet = { type: 'category', categoryId: category?.id || null }; menuOpen = false; render(); }
+function openBookmarkletSheet() { sheet = { type: 'bookmarklet' }; menuOpen = false; render(); }
 function openDropboxSheet() { sheet = { type: 'dropbox' }; menuOpen = false; render(); }
 
 function sheetContent() {
@@ -692,6 +717,70 @@ function sheetContent() {
     });
     frag.append(save);
     setTimeout(() => { name.focus(); name.select(); }, 0);
+    return frag;
+  }
+
+  if (sheet.type === 'bookmarklet') {
+    frag.append(sheetHeader('Bookmarklet'));
+    const code = bookmarkletCode();
+
+    const intro = document.createElement('div');
+    intro.className = 'sheet-note bookmarklet-intro';
+    intro.textContent = 'Save to Chatboard captures the current page URL and title, then opens the Add chat modal. It never changes the conversation in ChatGPT.';
+    frag.append(intro);
+
+    const desktopTitle = document.createElement('div');
+    desktopTitle.className = 'settings-subheading';
+    desktopTitle.textContent = 'Mac / desktop';
+    frag.append(desktopTitle);
+
+    const dragLink = document.createElement('a');
+    dragLink.className = 'bookmarklet-link';
+    dragLink.href = code;
+    dragLink.textContent = 'Save to Chatboard';
+    dragLink.title = 'Drag this link to your bookmarks bar';
+    dragLink.addEventListener('click', event => {
+      event.preventDefault();
+      toast('Drag this button to the bookmarks bar.');
+    });
+    frag.append(dragLink);
+
+    const desktopHelp = document.createElement('div');
+    desktopHelp.className = 'sheet-note';
+    desktopHelp.textContent = 'Drag the button above to the bookmarks bar. While viewing a ChatGPT conversation, click it to send that chat to Chatboard.';
+    frag.append(desktopHelp);
+
+    const mobileTitle = document.createElement('div');
+    mobileTitle.className = 'settings-subheading';
+    mobileTitle.textContent = 'iPhone / iPad Safari';
+    frag.append(mobileTitle);
+
+    const steps = document.createElement('ol');
+    steps.className = 'setup-steps';
+    for (const text of [
+      'Tap Copy bookmarklet below.',
+      'Create a normal Safari bookmark for this Chatboard page.',
+      'Open Bookmarks, tap Edit, and choose that bookmark.',
+      'Rename it “Save to Chatboard” and replace its address with the copied bookmarklet code.',
+      'While viewing a ChatGPT conversation in Safari, run Save to Chatboard from your bookmarks.'
+    ]) {
+      const li = document.createElement('li');
+      li.textContent = text;
+      steps.append(li);
+    }
+    frag.append(steps);
+
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'primary-button';
+    copy.textContent = 'Copy bookmarklet';
+    copy.addEventListener('click', () => copyText(code, 'Bookmarklet copied.'));
+    frag.append(copy);
+
+    const mobileNote = document.createElement('div');
+    mobileNote.className = 'sheet-note bookmarklet-footnote';
+    mobileNote.textContent = 'Bookmarklets run from browser pages. For capture directly from the ChatGPT iPhone/iPad app, an iOS Share Sheet Shortcut is a separate option we can add.';
+    frag.append(mobileNote);
     return frag;
   }
 
