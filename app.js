@@ -8,7 +8,7 @@ import {
   uploadBoard,
 } from './dropbox.js';
 
-const VERSION = '0.1.6';
+const VERSION = '0.1.7';
 const STORAGE_KEY = 'chatboard.board.v1';
 const FONT_KEY = 'chatboard.fontScale.v1';
 const VIEW_KEY = 'chatboard.view.v1';
@@ -473,10 +473,10 @@ function renderMenu() {
   };
 
   panel.append(
-    item('Hidden', totalFor('hidden') ? `${totalFor('hidden')} · temporary` : 'Temporary', () => setView('hidden')),
-    item('Archive', totalFor('archived') ? `${totalFor('archived')} · long-term` : 'Long-term', () => setView('archived')),
+    item('Hidden', totalFor('hidden') ? `${totalFor('hidden')} · Temporary` : 'Temporary', () => setView('hidden')),
+    item('Archive', totalFor('archived') ? `${totalFor('archived')} · Long-term` : 'Long-term', () => setView('archived')),
     item('Add category', '', () => openCategorySheet()),
-    item('Bookmarklet', 'Desktop & mobile setup', () => openBookmarkletSheet()),
+    item('Bookmarklet', 'Setup', () => openBookmarkletSheet()),
     item(isConnected() ? 'Dropbox' : 'Connect Dropbox', isConnected() ? 'Connected' : '', () => openDropboxSheet()),
   );
 
