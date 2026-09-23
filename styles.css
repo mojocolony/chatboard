@@ -61,7 +61,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   width: min(100%, 820px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 5vw, 42px) calc(124px + env(safe-area-inset-bottom));
+  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 5vw, 42px) calc(54px + env(safe-area-inset-bottom));
 }
 
 .app-header {
@@ -206,25 +206,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .empty-board strong { display: block; margin-bottom: 8px; color: var(--text); font-weight: 500; }
 
-.floating-pill {
-  position: fixed;
-  right: max(18px, calc((100vw - 820px) / 2 + 24px));
-  bottom: calc(22px + env(safe-area-inset-bottom));
-  z-index: 20;
-  display: grid;
-  width: 54px;
-  height: 54px;
-  place-items: center;
-  border: 1px solid var(--line-dark);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--paper) 94%, transparent);
-  box-shadow: 0 8px 24px rgba(22,23,21,.09);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-.floating-button { display: grid; width: 52px; height: 52px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
-.floating-button .icon { width: 25px; height: 25px; }
-
 .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(26,27,25,.13); }
 .menu-panel {
   position: fixed;
@@ -358,14 +339,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .toast--visible { transform: translate(-50%, 0); opacity: .96; }
 
 @media (hover: hover) and (pointer: fine) {
-  .icon-button:hover, .category-tool:hover, .bookmark-actions:hover, .drag-handle:hover, .arrange-button:hover, .floating-button:hover, .popover button:hover, .menu-item:hover, .back-button:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+  .icon-button:hover, .category-tool:hover, .bookmark-actions:hover, .drag-handle:hover, .arrange-button:hover, .popover button:hover, .menu-item:hover, .back-button:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
   .bookmark-link:hover .bookmark-link-text { text-decoration: underline; text-underline-offset: 4px; }
 }
 
 @media (max-width: 560px) {
   .chatboard-app { padding-left: 16px; padding-right: 16px; }
   .app-header { margin-bottom: 30px; }
-  .floating-pill { right: 16px; }
   .menu-panel { right: 16px; }
   .bookmark-row { min-height: 64px; }
   .bookmark-link { min-height: 64px; }

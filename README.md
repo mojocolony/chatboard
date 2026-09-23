@@ -1,4 +1,4 @@
-# Chatboard v0.1.2
+# Chatboard v0.1.3
 
 A lightweight personal board for organizing ChatGPT conversations without changing anything inside ChatGPT itself.
 
@@ -8,7 +8,7 @@ A lightweight personal board for organizing ChatGPT conversations without changi
 
 **Description:** Personal bookmark board for organizing and syncing ChatGPT conversations.
 
-## What v0.1.2 does
+## What v0.1.3 does
 
 - Add ChatGPT conversation bookmarks.
 - Give every bookmark its own independent Chatboard title.
@@ -28,7 +28,8 @@ A lightweight personal board for organizing ChatGPT conversations without changi
 - Dropbox OAuth with PKCE; no Dropbox app secret is stored in the site.
 - PWA manifest and service worker.
 - Visible version number in the menu.
-- Capture URL support for future bookmarklet / iOS Shortcut use.
+- Add Chat lives with the top-right controls (+ / search / menu); no detached floating add button.
+- One-click browser bookmarklet capture support and URL capture support for an iOS Shortcut.
 
 ## 1. Upload to GitHub Pages
 
@@ -83,14 +84,16 @@ After deployment, a browser bookmarklet or iOS Shortcut can use that to pre-fill
 Create a bookmark whose URL is:
 
 ```text
-javascript:(()=>{const u='https://mojocolony.github.io/chatboard/?add=1&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title);location.href=u})()
+javascript:(()=>{const b='https://mojocolony.github.io/chatboard/';const t=document.title.replace(/^\s*ChatGPT\s*[-|:]\s*/i,'').replace(/\s*[-|:]\s*ChatGPT\s*$/i,'').trim()||'ChatGPT conversation';window.open(b+'?add=1&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(t),'_blank')})()
 ```
 
-While viewing a ChatGPT conversation, click the bookmarklet. Chatboard opens with the chat URL and current page title pre-filled.
+While viewing a ChatGPT conversation, click the bookmarklet. Chatboard opens in a new tab with the chat URL and title pre-filled. The original ChatGPT conversation stays open.
+
+In Chrome on Mac: show the bookmarks bar, add any bookmark, rename it `Save to Chatboard`, then edit its URL and paste the JavaScript above.
 
 ## Notes
 
 - Chatboard never renames, archives, hides, or deletes the real ChatGPT conversation.
 - `Hide`, `Archive`, and `Delete permanently` affect only the bookmark in Chatboard.
 - Local changes are saved immediately even when Dropbox is unavailable; sync retries when the app returns online.
-- Because this is a single-user personal app, v0.1.2 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
+- Because this is a single-user personal app, v0.1.3 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.

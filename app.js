@@ -8,7 +8,7 @@ import {
   uploadBoard,
 } from './dropbox.js';
 
-const VERSION = '0.1.2';
+const VERSION = '0.1.3';
 const STORAGE_KEY = 'chatboard.board.v1';
 const FONT_KEY = 'chatboard.fontScale.v1';
 const VIEW_KEY = 'chatboard.view.v1';
@@ -209,7 +209,6 @@ function render() {
   if (currentView === 'active') shell.append(renderBoard('active'));
   else shell.append(renderSecondaryView(currentView));
 
-  if (currentView === 'active') shell.append(renderFloatingAdd());
   app.append(shell);
 
   if (menuOpen) renderMenu();
@@ -229,6 +228,7 @@ function renderHeader() {
   const actions = document.createElement('div');
   actions.className = 'header-actions';
   actions.append(
+    button('icon-button', 'Add chat', icons.plus, () => openAddSheet()),
     button('icon-button', 'Search', icons.search, () => { searchOpen = !searchOpen; query = searchOpen ? query : ''; render(); if (searchOpen) setTimeout(() => document.querySelector('.search-field')?.focus(), 0); }),
     button('icon-button', 'Menu', icons.menu, () => { menuOpen = !menuOpen; popover = null; render(); }),
   );
