@@ -222,7 +222,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   top: max(64px, calc(env(safe-area-inset-top) + 52px));
   right: max(18px, calc((100vw - 820px) / 2 + 24px));
   z-index: 50;
-  width: min(292px, calc(100vw - 36px));
+  width: min(360px, calc(100vw - 32px));
   overflow: hidden;
   border: 1px solid var(--line-dark);
   border-radius: 14px;
@@ -230,20 +230,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   box-shadow: 0 16px 40px rgba(20,21,20,.13);
 }
 .menu-item {
-  display: flex;
+  display: grid;
   width: 100%;
-  min-height: 48px;
+  min-height: 52px;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 16px;
+  column-gap: 18px;
+  padding: 0 18px;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
-.menu-item small { color: var(--muted); font-size: .68em; }
+.menu-item > span { min-width: 0; }
+.menu-item small { color: var(--muted); font-size: .68em; text-align: right; white-space: nowrap; }
 .menu-control-row { display: grid; gap: 9px; padding: 13px 16px 15px; border-bottom: 1px solid var(--line); }
 .menu-label { color: var(--muted); font-size: .7em; }
 .font-size-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
