@@ -8,7 +8,7 @@ import {
   uploadBoard,
 } from './dropbox.js';
 
-const VERSION = '0.1.9';
+const VERSION = '0.1.10';
 const STORAGE_KEY = 'chatboard.board.v1';
 const FONT_KEY = 'chatboard.fontScale.v1';
 const VIEW_KEY = 'chatboard.view.v1';
@@ -243,16 +243,18 @@ function totalFor(status) {
   return state.bookmarks.filter(b => b.status === status).length;
 }
 
-function allCategoriesCollapsed() {
-  return state.categories.length > 0 && state.categories.every(category => category.collapsed);
-}
-
-function toggleAllCategories() {
-  const collapse = !allCategoriesCollapsed();
-  state.categories.forEach(category => { category.collapsed = collapse; });
+function expandAllCategories() {
+  state.categories.forEach(category => { category.collapsed = false; });
   menuOpen = false;
   persist();
-  toast(collapse ? 'All categories collapsed.' : 'All categories expanded.');
+  toast('All categories expanded.');
+}
+
+function collapseAllCategories() {
+  state.categories.forEach(category => { category.collapsed = true; });
+  menuOpen = false;
+  persist();
+  toast('All categories collapsed.');
 }
 
 function sortCategoryAlphabetically(category) {
@@ -530,7 +532,8 @@ function renderMenu() {
     item('Hidden', totalFor('hidden') ? `${totalFor('hidden')} · Temporary` : 'Temporary', () => setView('hidden')),
     item('Archive', totalFor('archived') ? `${totalFor('archived')} · Long-term` : 'Long-term', () => setView('archived')),
     item('Add category', 'Organize', () => openCategorySheet()),
-    item(allCategoriesCollapsed() ? 'Expand all' : 'Collapse all', 'Sections', toggleAllCategories),
+    item('Expand all', 'Sections', expandAllCategories),
+    item('Collapse all', 'Sections', collapseAllCategories),
     item('Bookmarklet', 'Setup', () => openBookmarkletSheet()),
     item(isConnected() ? 'Dropbox' : 'Connect Dropbox', isConnected() ? 'Connected' : '', () => openDropboxSheet()),
   );
