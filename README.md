@@ -1,4 +1,4 @@
-# Chatboard v0.1.0
+# Chatboard v0.1.1
 
 A lightweight personal board for organizing ChatGPT conversations without changing anything inside ChatGPT itself.
 
@@ -8,7 +8,7 @@ A lightweight personal board for organizing ChatGPT conversations without changi
 
 **Description:** Personal bookmark board for organizing and syncing ChatGPT conversations.
 
-## What v0.1.0 does
+## What v0.1.1 does
 
 - Add ChatGPT conversation bookmarks.
 - Give every bookmark its own independent Chatboard title.
@@ -61,7 +61,7 @@ Open `config.js` and paste the app key:
 
 ```js
 window.CHATBOARD_CONFIG = {
-  dropboxAppKey: "PASTE_APP_KEY_HERE",
+  dropboxAppKey: "d57087041powcze",
 };
 ```
 
@@ -103,4 +103,4 @@ While viewing a ChatGPT conversation, click the bookmarklet. Chatboard opens wit
 - Chatboard never renames, archives, hides, or deletes the real ChatGPT conversation.
 - `Hide`, `Archive`, and `Delete permanently` affect only the bookmark in Chatboard.
 - Local changes are saved immediately even when Dropbox is unavailable; sync retries when the app returns online.
-- Because this is a single-user personal app, v0.1.0 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
+- Because this is a single-user personal app, v0.1.1 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
