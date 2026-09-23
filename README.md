@@ -1,4 +1,4 @@
-# Chatboard v0.1.1
+# Chatboard v0.1.2
 
 A lightweight personal board for organizing ChatGPT conversations without changing anything inside ChatGPT itself.
 
@@ -8,7 +8,7 @@ A lightweight personal board for organizing ChatGPT conversations without changi
 
 **Description:** Personal bookmark board for organizing and syncing ChatGPT conversations.
 
-## What v0.1.1 does
+## What v0.1.2 does
 
 - Add ChatGPT conversation bookmarks.
 - Give every bookmark its own independent Chatboard title.
@@ -51,30 +51,20 @@ A lightweight personal board for organizing ChatGPT conversations without changi
    - `files.content.write`
 6. Add this exact Redirect URI:
    `https://mojocolony.github.io/chatboard/`
-7. Copy the app key.
+7. The app key for this build is already configured in `config.js`.
 
 Do **not** copy or expose an app secret. Chatboard is a browser app and uses PKCE.
 
-## 3. Put in the Dropbox app key
+## 3. Dropbox app key
 
-Open `config.js` and paste the app key:
-
-```js
-window.CHATBOARD_CONFIG = {
-  dropboxAppKey: "d57087041powcze",
-};
-```
-
-Upload the revised `config.js` to GitHub.
-
-Alternatively, leave `config.js` blank and paste the app key into **Chatboard → menu → Connect Dropbox** on each device.
+The Dropbox app key is already configured in `config.js`. Chatboard does not ask for it in the interface. No Dropbox app secret is stored in the site.
 
 ## 4. Connect Dropbox
 
 1. Open Chatboard.
 2. Open the menu.
 3. Choose **Connect Dropbox**.
-4. Choose **Save key & connect** (or simply connect if the key is already in `config.js`).
+4. Tap **Connect Dropbox**.
 5. Approve Dropbox access.
 6. Chatboard creates `/chatboard.json` inside its Dropbox App Folder.
 
@@ -103,4 +93,4 @@ While viewing a ChatGPT conversation, click the bookmarklet. Chatboard opens wit
 - Chatboard never renames, archives, hides, or deletes the real ChatGPT conversation.
 - `Hide`, `Archive`, and `Delete permanently` affect only the bookmark in Chatboard.
 - Local changes are saved immediately even when Dropbox is unavailable; sync retries when the app returns online.
-- Because this is a single-user personal app, v0.1.1 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
+- Because this is a single-user personal app, v0.1.2 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.

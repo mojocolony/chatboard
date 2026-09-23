@@ -1,6 +1,5 @@
 const TOKEN_KEY = 'chatboard.dropbox.token.v1';
 const PENDING_KEY = 'chatboard.dropbox.pending.v1';
-const APP_KEY_FALLBACK = 'chatboard.dropbox.appKey.v1';
 const DROPBOX_FILE = '/chatboard.json';
 
 function base64Url(bytes) {
@@ -21,18 +20,7 @@ async function codeChallenge(verifier) {
 }
 
 function getConfiguredKey() {
-  return String(window.CHATBOARD_CONFIG?.dropboxAppKey || localStorage.getItem(APP_KEY_FALLBACK) || '').trim();
-}
-
-export function saveAppKey(value) {
-  const clean = String(value || '').trim();
-  if (clean) localStorage.setItem(APP_KEY_FALLBACK, clean);
-  else localStorage.removeItem(APP_KEY_FALLBACK);
-  return clean;
-}
-
-export function getAppKey() {
-  return getConfiguredKey();
+  return String(window.CHATBOARD_CONFIG?.dropboxAppKey || '').trim();
 }
 
 export function getRedirectUri() {

@@ -1,5 +1,5 @@
-// Optional: paste your Dropbox app key here once and re-upload this file.
-// It is safe for a browser app's Dropbox app key to be public. Do NOT put an app secret here.
+// Dropbox browser app configuration.
+// The public app key is safe to embed here. Never place a Dropbox app secret in this file.
 window.CHATBOARD_CONFIG = {
   dropboxAppKey: "d57087041powcze",
 };

@@ -3,14 +3,12 @@ import {
   disconnectDropbox,
   downloadBoard,
   finishDropboxCallback,
-  getAppKey,
   getRedirectUri,
   isConnected,
-  saveAppKey,
   uploadBoard,
 } from './dropbox.js';
 
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 const STORAGE_KEY = 'chatboard.board.v1';
 const FONT_KEY = 'chatboard.fontScale.v1';
 const VIEW_KEY = 'chatboard.view.v1';
@@ -696,20 +694,26 @@ function sheetContent() {
 
   if (sheet.type === 'dropbox') {
     frag.append(sheetHeader('Dropbox'));
-    const appKey = textInput(getAppKey(), 'Dropbox app key');
     const redirect = getRedirectUri();
-    frag.append(field('App key', appKey));
+
+    const status = document.createElement('div');
+    status.className = 'sheet-note dropbox-status';
+    status.textContent = isConnected()
+      ? 'Dropbox is connected. Chatboard syncs this board through its private Dropbox app folder.'
+      : 'Dropbox is ready to connect. Chatboard will only use its private Dropbox app folder.';
+    frag.append(status);
+
     const note = document.createElement('div');
     note.className = 'sheet-note';
-    note.textContent = `Redirect URI to register in Dropbox: ${redirect}`;
+    note.textContent = `Registered redirect: ${redirect}`;
     frag.append(note);
-    const actions = document.createElement('div'); actions.className = 'sheet-actions';
 
+    const actions = document.createElement('div'); actions.className = 'sheet-actions';
     const connect = document.createElement('button');
-    connect.type = 'button'; connect.className = 'primary-button'; connect.textContent = isConnected() ? 'Reconnect Dropbox' : 'Save key & connect';
+    connect.type = 'button';
+    connect.className = 'primary-button';
+    connect.textContent = isConnected() ? 'Reconnect Dropbox' : 'Connect Dropbox';
     connect.addEventListener('click', async () => {
-      const clean = saveAppKey(appKey.value);
-      if (!clean) { toast('Enter the Dropbox app key.'); appKey.focus(); return; }
       try { await beginDropboxConnect(location.href); } catch (error) { toast(error.message); }
     });
     actions.append(connect);
