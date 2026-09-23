@@ -8,7 +8,7 @@ import {
   uploadBoard,
 } from './dropbox.js';
 
-const VERSION = '0.1.3';
+const VERSION = '0.1.4';
 const STORAGE_KEY = 'chatboard.board.v1';
 const FONT_KEY = 'chatboard.fontScale.v1';
 const VIEW_KEY = 'chatboard.view.v1';
@@ -23,8 +23,7 @@ const icons = {
   chevronRight: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
   back: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>',
   grip: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>',
-  up: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>',
-  down: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  arrange: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>',
   close: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>',
 };
 
@@ -42,6 +41,7 @@ let syncTimer = null;
 let syncing = false;
 let syncMessage = isConnected() ? 'Dropbox connected' : 'Local cache';
 let dragging = null;
+let pointerDrag = null;
 
 function uid(prefix = 'id') {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -197,7 +197,9 @@ function totalFor(status) {
 
 function render() {
   document.querySelectorAll('.scrim,.menu-panel,.popover-scrim,.popover,.sheet-scrim,.sheet').forEach(el => el.remove());
-  document.documentElement.dataset.fontScale = localStorage.getItem(FONT_KEY) || 'medium';
+  const storedFont = localStorage.getItem(FONT_KEY) || '22';
+  const legacyFontMap = { small: '20', medium: '22', large: '24' };
+  document.documentElement.dataset.fontScale = legacyFontMap[storedFont] || storedFont;
   app.innerHTML = '';
 
   const shell = document.createElement('main');
@@ -227,8 +229,17 @@ function renderHeader() {
 
   const actions = document.createElement('div');
   actions.className = 'header-actions';
+  const arrangeButton = button(`icon-button arrange-toggle${arrangeMode ? ' arrange-toggle--active' : ''}`, arrangeMode ? 'Done arranging' : 'Arrange', icons.arrange, () => {
+    arrangeMode = !arrangeMode;
+    menuOpen = false;
+    popover = null;
+    render();
+  });
+  arrangeButton.setAttribute('aria-pressed', String(arrangeMode));
+
   actions.append(
     button('icon-button', 'Add chat', icons.plus, () => openAddSheet()),
+    arrangeButton,
     button('icon-button', 'Search', icons.search, () => { searchOpen = !searchOpen; query = searchOpen ? query : ''; render(); if (searchOpen) setTimeout(() => document.querySelector('.search-field')?.focus(), 0); }),
     button('icon-button', 'Menu', icons.menu, () => { menuOpen = !menuOpen; popover = null; render(); }),
   );
@@ -320,10 +331,11 @@ function renderCategory(category, categoryIndex, bookmarks, status) {
   if (arrangeMode && status === 'active') {
     const tools = document.createElement('div');
     tools.className = 'category-tools';
+    const drag = button('category-drag-handle', 'Drag category', icons.grip, () => {});
+    drag.dataset.dragCategoryId = category.id;
     tools.append(
-      button('category-tool', 'Move category up', icons.up, () => moveCategory(categoryIndex, -1)),
-      button('category-tool', 'Move category down', icons.down, () => moveCategory(categoryIndex, 1)),
-      button('category-tool', 'Rename category', icons.more, e => openCategoryMenu(category, e.currentTarget)),
+      drag,
+      button('category-tool', 'Category actions', icons.more, e => openCategoryMenu(category, e.currentTarget)),
     );
     head.append(tools);
   }
@@ -349,11 +361,10 @@ function renderBookmark(bookmark, index, siblings, status) {
   const row = document.createElement('div');
   row.className = 'bookmark-row';
   row.dataset.bookmarkId = bookmark.id;
-  row.draggable = arrangeMode && status === 'active';
 
   if (arrangeMode && status === 'active') {
     const drag = button('drag-handle', 'Drag chat', icons.grip, () => {});
-    drag.tabIndex = -1;
+    drag.dataset.dragBookmarkId = bookmark.id;
     row.append(drag);
   }
 
@@ -383,16 +394,6 @@ function renderBookmark(bookmark, index, siblings, status) {
     text.textContent = bookmark.title;
     link.append(text);
     row.append(link);
-  }
-
-  if (arrangeMode && status === 'active') {
-    const arrange = document.createElement('div');
-    arrange.className = 'arrange-buttons';
-    arrange.append(
-      button('arrange-button', 'Move up', icons.up, () => moveBookmarkWithinCategory(bookmark, -1)),
-      button('arrange-button', 'Move down', icons.down, () => moveBookmarkWithinCategory(bookmark, 1)),
-    );
-    row.append(arrange);
   }
 
   row.append(button('bookmark-actions', 'Chat actions', icons.more, e => openBookmarkMenu(bookmark, e.currentTarget)));
@@ -449,9 +450,8 @@ function renderMenu() {
   };
 
   panel.append(
-    item('Hidden', totalFor('hidden') ? String(totalFor('hidden')) : '', () => setView('hidden')),
-    item('Archive', totalFor('archived') ? String(totalFor('archived')) : '', () => setView('archived')),
-    item(arrangeMode ? 'Done arranging' : 'Arrange', '', () => { arrangeMode = !arrangeMode; menuOpen = false; render(); }),
+    item('Hidden', totalFor('hidden') ? `${totalFor('hidden')} · temporary` : 'Temporary', () => setView('hidden')),
+    item('Archive', totalFor('archived') ? `${totalFor('archived')} · long-term` : 'Long-term', () => setView('archived')),
     item('Add category', '', () => openCategorySheet()),
     item(isConnected() ? 'Dropbox' : 'Connect Dropbox', isConnected() ? 'Connected' : '', () => openDropboxSheet()),
   );
@@ -463,11 +463,14 @@ function renderMenu() {
   label.textContent = 'Font size';
   const sizes = document.createElement('div');
   sizes.className = 'font-size-controls';
-  const current = localStorage.getItem(FONT_KEY) || 'medium';
-  [['small','A−'],['medium','A'],['large','A+']].forEach(([value, text]) => {
+  const rawCurrent = localStorage.getItem(FONT_KEY) || '22';
+  const legacyFontMap = { small: '20', medium: '22', large: '24' };
+  const current = legacyFontMap[rawCurrent] || rawCurrent;
+  ['18','20','22','24','26','28'].forEach(value => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.textContent = text;
+    b.textContent = value;
+    b.setAttribute('aria-label', `${value} pixel base font`);
     b.setAttribute('aria-pressed', String(current === value));
     b.addEventListener('click', () => { localStorage.setItem(FONT_KEY, value); render(); });
     sizes.append(b);
@@ -522,10 +525,10 @@ function renderPopover() {
     action('Edit', () => openEditSheet(bookmark));
     if (bookmark.status === 'active') {
       action('Hide for now', () => changeStatus(bookmark, 'hidden'));
-      action('Archive', () => changeStatus(bookmark, 'archived'));
+      action('Archive as finished', () => changeStatus(bookmark, 'archived'));
     } else if (bookmark.status === 'hidden') {
       action('Restore', () => changeStatus(bookmark, 'active'));
-      action('Archive', () => changeStatus(bookmark, 'archived'));
+      action('Archive as finished', () => changeStatus(bookmark, 'archived'));
     } else {
       action('Restore', () => changeStatus(bookmark, 'active'));
       action('Delete permanently', () => deleteBookmark(bookmark), 'danger');
@@ -549,7 +552,7 @@ function renderSheet() {
   document.body.append(scrim);
 
   const panel = document.createElement('div');
-  panel.className = 'sheet';
+  panel.className = (sheet.type === 'add' || sheet.type === 'edit') ? 'sheet sheet--modal' : 'sheet';
   panel.append(sheetContent());
   document.body.append(panel);
 }
@@ -758,60 +761,159 @@ function deleteCategory(category) {
   persist();
 }
 
-function moveCategory(index, delta) {
-  const next = index + delta;
-  if (next < 0 || next >= state.categories.length) return;
-  [state.categories[index], state.categories[next]] = [state.categories[next], state.categories[index]];
-  persist();
+function clearDropIndicators() {
+  document.querySelectorAll('.drop-before,.drop-after,.drop-end,.category-drop-before,.category-drop-after,.bookmark-drop-target').forEach(el => {
+    el.classList.remove('drop-before','drop-after','drop-end','category-drop-before','category-drop-after','bookmark-drop-target');
+  });
 }
 
-function moveBookmarkWithinCategory(bookmark, delta) {
-  const categoryBookmarks = state.bookmarks.filter(b => b.status === 'active' && b.categoryId === bookmark.categoryId);
-  const current = categoryBookmarks.findIndex(b => b.id === bookmark.id);
-  const target = current + delta;
-  if (target < 0 || target >= categoryBookmarks.length) return;
-  const a = state.bookmarks.indexOf(categoryBookmarks[current]);
-  const b = state.bookmarks.indexOf(categoryBookmarks[target]);
-  [state.bookmarks[a], state.bookmarks[b]] = [state.bookmarks[b], state.bookmarks[a]];
-  persist();
+function startPointerDrag(event, type, id, sourceEl, handle) {
+  if (event.button !== undefined && event.button !== 0) return;
+  event.preventDefault();
+  pointerDrag = { type, id, sourceEl, handle, pointerId: event.pointerId, drop: null };
+  dragging = pointerDrag;
+  sourceEl.classList.add(type === 'bookmark' ? 'bookmark-row--dragging' : 'category-section--dragging');
+  document.body.classList.add('arrange-dragging');
+  try { handle.setPointerCapture(event.pointerId); } catch {}
+}
+
+function maybeAutoScroll(clientY) {
+  const edge = 72;
+  const speed = 14;
+  if (clientY < edge) window.scrollBy(0, -speed);
+  else if (clientY > innerHeight - edge) window.scrollBy(0, speed);
+}
+
+function updateBookmarkDrop(clientX, clientY) {
+  clearDropIndicators();
+  const under = document.elementFromPoint(clientX, clientY);
+  if (!under) return null;
+
+  const row = under.closest('.bookmark-row');
+  if (row) {
+    if (row.dataset.bookmarkId === pointerDrag.id) return null;
+    const list = row.closest('.bookmark-list');
+    if (!list) return null;
+    const rect = row.getBoundingClientRect();
+    const position = clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+    row.classList.add(position === 'before' ? 'drop-before' : 'drop-after');
+    return { categoryId: list.dataset.categoryId, targetId: row.dataset.bookmarkId, position };
+  }
+
+  const list = under.closest('.bookmark-list');
+  if (list) {
+    list.classList.add('drop-end');
+    return { categoryId: list.dataset.categoryId, targetId: null, position: 'end' };
+  }
+
+  const section = under.closest('.category-section');
+  if (section) {
+    section.querySelector('.category-heading-row')?.classList.add('bookmark-drop-target');
+    return { categoryId: section.dataset.categoryId, targetId: null, position: 'end' };
+  }
+  return null;
+}
+
+function updateCategoryDrop(clientX, clientY) {
+  clearDropIndicators();
+  const under = document.elementFromPoint(clientX, clientY);
+  if (!under) return null;
+  const section = under.closest('.category-section');
+  if (!section || section.dataset.categoryId === pointerDrag.id) return null;
+  const rect = section.getBoundingClientRect();
+  const position = clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+  section.classList.add(position === 'before' ? 'category-drop-before' : 'category-drop-after');
+  return { targetId: section.dataset.categoryId, position };
+}
+
+function onPointerMove(event) {
+  if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+  event.preventDefault();
+  maybeAutoScroll(event.clientY);
+  pointerDrag.drop = pointerDrag.type === 'bookmark'
+    ? updateBookmarkDrop(event.clientX, event.clientY)
+    : updateCategoryDrop(event.clientX, event.clientY);
+}
+
+function applyBookmarkDrop(bookmarkId, drop) {
+  if (!drop?.categoryId) return false;
+  const dragged = state.bookmarks.find(b => b.id === bookmarkId);
+  if (!dragged) return false;
+
+  const filtered = state.bookmarks.filter(b => b.id !== bookmarkId);
+  dragged.categoryId = drop.categoryId;
+  dragged.updatedAt = new Date().toISOString();
+
+  let insertIndex = filtered.length;
+  if (drop.targetId) {
+    const targetIndex = filtered.findIndex(b => b.id === drop.targetId);
+    if (targetIndex >= 0) insertIndex = targetIndex + (drop.position === 'after' ? 1 : 0);
+  } else {
+    const targetItems = filtered.filter(b => b.status === 'active' && b.categoryId === drop.categoryId);
+    if (targetItems.length) insertIndex = filtered.indexOf(targetItems[targetItems.length - 1]) + 1;
+  }
+
+  filtered.splice(Math.max(0, insertIndex), 0, dragged);
+  state.bookmarks = filtered;
+  return true;
+}
+
+function applyCategoryDrop(categoryId, drop) {
+  if (!drop?.targetId || drop.targetId === categoryId) return false;
+  const dragged = state.categories.find(c => c.id === categoryId);
+  if (!dragged) return false;
+  const filtered = state.categories.filter(c => c.id !== categoryId);
+  const targetIndex = filtered.findIndex(c => c.id === drop.targetId);
+  if (targetIndex < 0) return false;
+  const insertIndex = targetIndex + (drop.position === 'after' ? 1 : 0);
+  filtered.splice(insertIndex, 0, dragged);
+  state.categories = filtered;
+  return true;
+}
+
+function finishPointerDrag(event) {
+  if (!pointerDrag || event.pointerId !== pointerDrag.pointerId) return;
+  const active = pointerDrag;
+  const changed = active.type === 'bookmark'
+    ? applyBookmarkDrop(active.id, active.drop)
+    : applyCategoryDrop(active.id, active.drop);
+
+  try { active.handle.releasePointerCapture(event.pointerId); } catch {}
+  active.sourceEl.classList.remove('bookmark-row--dragging','category-section--dragging');
+  document.body.classList.remove('arrange-dragging');
+  clearDropIndicators();
+  pointerDrag = null;
+  dragging = null;
+  if (changed) persist();
+  else render();
+}
+
+function cancelPointerDrag(event) {
+  if (!pointerDrag || (event.pointerId !== undefined && event.pointerId !== pointerDrag.pointerId)) return;
+  const active = pointerDrag;
+  active.sourceEl.classList.remove('bookmark-row--dragging','category-section--dragging');
+  document.body.classList.remove('arrange-dragging');
+  clearDropIndicators();
+  pointerDrag = null;
+  dragging = null;
+  render();
 }
 
 function attachDragListeners() {
-  document.querySelectorAll('.bookmark-row[draggable="true"]').forEach(row => {
-    row.addEventListener('dragstart', e => {
-      dragging = { type: 'bookmark', id: row.dataset.bookmarkId };
-      row.classList.add('bookmark-row--dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', row.dataset.bookmarkId);
-    });
-    row.addEventListener('dragend', () => { dragging = null; row.classList.remove('bookmark-row--dragging'); });
+  document.querySelectorAll('[data-drag-bookmark-id]').forEach(handle => {
+    const row = handle.closest('.bookmark-row');
+    handle.addEventListener('pointerdown', event => startPointerDrag(event, 'bookmark', handle.dataset.dragBookmarkId, row, handle));
+    handle.addEventListener('pointermove', onPointerMove);
+    handle.addEventListener('pointerup', finishPointerDrag);
+    handle.addEventListener('pointercancel', cancelPointerDrag);
   });
-  document.querySelectorAll('.bookmark-list').forEach(list => {
-    list.addEventListener('dragover', e => { if (dragging?.type === 'bookmark') e.preventDefault(); });
-    list.addEventListener('drop', e => {
-      if (dragging?.type !== 'bookmark') return;
-      e.preventDefault();
-      const dragged = state.bookmarks.find(b => b.id === dragging.id);
-      if (!dragged) return;
-      const categoryId = list.dataset.categoryId;
-      const rows = [...list.querySelectorAll('.bookmark-row:not(.bookmark-row--dragging)')];
-      const y = e.clientY;
-      const targetRow = rows.find(r => y < r.getBoundingClientRect().top + r.getBoundingClientRect().height / 2);
-      dragged.categoryId = categoryId;
-      const filtered = state.bookmarks.filter(b => b.id !== dragged.id);
-      let insertIndex = filtered.length;
-      if (targetRow) {
-        const target = filtered.find(b => b.id === targetRow.dataset.bookmarkId);
-        insertIndex = filtered.indexOf(target);
-      } else {
-        const inCat = filtered.filter(b => b.categoryId === categoryId && b.status === 'active');
-        if (inCat.length) insertIndex = filtered.indexOf(inCat[inCat.length - 1]) + 1;
-      }
-      filtered.splice(Math.max(0, insertIndex), 0, dragged);
-      state.bookmarks = filtered;
-      dragged.updatedAt = new Date().toISOString();
-      persist();
-    });
+
+  document.querySelectorAll('[data-drag-category-id]').forEach(handle => {
+    const section = handle.closest('.category-section');
+    handle.addEventListener('pointerdown', event => startPointerDrag(event, 'category', handle.dataset.dragCategoryId, section, handle));
+    handle.addEventListener('pointermove', onPointerMove);
+    handle.addEventListener('pointerup', finishPointerDrag);
+    handle.addEventListener('pointercancel', cancelPointerDrag);
   });
 }
 

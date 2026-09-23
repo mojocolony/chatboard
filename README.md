@@ -1,4 +1,4 @@
-# Chatboard v0.1.3
+# Chatboard v0.1.4
 
 A lightweight personal board for organizing ChatGPT conversations without changing anything inside ChatGPT itself.
 
@@ -8,27 +8,28 @@ A lightweight personal board for organizing ChatGPT conversations without changi
 
 **Description:** Personal bookmark board for organizing and syncing ChatGPT conversations.
 
-## What v0.1.3 does
+## What v0.1.4 does
 
 - Add ChatGPT conversation bookmarks.
 - Give every bookmark its own independent Chatboard title.
 - Organize chats into collapsible categories.
 - Rename categories.
-- Rearrange categories with up/down controls.
-- Rearrange chats with drag-and-drop on desktop and up/down controls in Arrange mode.
+- Rearrange categories by dragging their grip handles in Arrange mode.
+- Rearrange chats, including between categories, by dragging their grip handles with a clear insertion line.
+- Arrange mode is available directly from the top toolbar using Lucide `settings-2`; it is no longer hidden in the menu.
 - Move a chat to another category from Edit.
 - Temporarily hide chats.
 - Archive and restore chats.
 - Permanently delete archived bookmarks without affecting ChatGPT.
 - Search visible chats.
 - IBM Plex Mono throughout.
-- Font size controls: A− / A / A+ (20 / 22 / 24 px base sizes).
+- Font size controls: 18 / 20 / 22 / 24 / 26 / 28 px base sizes.
 - Local cache for immediate startup/offline use.
 - Dropbox sync to a single `chatboard.json` data file.
 - Dropbox OAuth with PKCE; no Dropbox app secret is stored in the site.
 - PWA manifest and service worker.
 - Visible version number in the menu.
-- Add Chat lives with the top-right controls (+ / search / menu); no detached floating add button.
+- Add Chat lives with the top-right controls and opens as a centered modal over the board.
 - One-click browser bookmarklet capture support and URL capture support for an iOS Shortcut.
 
 ## 1. Upload to GitHub Pages
@@ -96,4 +97,11 @@ In Chrome on Mac: show the bookmarks bar, add any bookmark, rename it `Save to C
 - Chatboard never renames, archives, hides, or deletes the real ChatGPT conversation.
 - `Hide`, `Archive`, and `Delete permanently` affect only the bookmark in Chatboard.
 - Local changes are saved immediately even when Dropbox is unavailable; sync retries when the app returns online.
-- Because this is a single-user personal app, v0.1.3 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
+- Because this is a single-user personal app, v0.1.4 uses simple last-write-wins Dropbox sync rather than a multi-user conflict system.
+
+
+### Hidden vs Archive
+
+- **Hidden**: temporary. The chat is still active, but removed from the main board until restored.
+- **Archive**: long-term. Use it when the chat or project is finished but worth keeping.
+- Neither state changes the real ChatGPT conversation.

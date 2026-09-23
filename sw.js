@@ -1,4 +1,4 @@
-const CACHE = 'chatboard-v0.1.3';
+const CACHE = 'chatboard-v0.1.4';
 const ASSETS = [
   './', './index.html', './styles.css', './app.js', './dropbox.js', './config.js',
   './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'
