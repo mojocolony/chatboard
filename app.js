@@ -8,7 +8,7 @@ import {
   uploadBoard,
 } from './dropbox.js';
 
-const VERSION = '0.1.8';
+const VERSION = '0.1.9';
 const STORAGE_KEY = 'chatboard.board.v1';
 const FONT_KEY = 'chatboard.fontScale.v1';
 const VIEW_KEY = 'chatboard.view.v1';
@@ -49,7 +49,32 @@ function uid(prefix = 'id') {
 
 function bookmarkletCode() {
   const base = new URL('./', location.href).href;
-  return `javascript:(()=>{const b=${JSON.stringify(base)};const t=(document.title||'ChatGPT conversation').replace(/^\s*ChatGPT\s*[-|:]\s*/i,'').replace(/\s*[-|:]\s*ChatGPT\s*$/i,'').trim()||'ChatGPT conversation';window.open(b+'?add=1&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(t),'_blank')})()`;
+  return `javascript:(()=>{const b=${JSON.stringify(base)};const u=location.href;const t=(document.title||'ChatGPT conversation').replace(/^\s*ChatGPT\s*[-|:]\s*/i,'').replace(/\s*[-|:]\s*ChatGPT\s*$/i,'').trim()||'ChatGPT conversation';location.href=b+'?add=1&url='+encodeURIComponent(u)+'&title='+encodeURIComponent(t)+'&return='+encodeURIComponent(u)})()`;
+}
+
+function captureReturnUrl() {
+  const value = new URLSearchParams(location.search).get('return');
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch { return ''; }
+}
+
+function returnFromCapture() {
+  const target = captureReturnUrl();
+  if (!target) return false;
+  clearCaptureParams();
+  if (document.referrer) {
+    try {
+      if (new URL(document.referrer).href === target && history.length > 1) {
+        history.back();
+        return true;
+      }
+    } catch {}
+  }
+  location.replace(target);
+  return true;
 }
 
 async function copyText(text, successMessage = 'Copied.') {
@@ -216,6 +241,35 @@ function visibleBookmarks(categoryId, status = currentView) {
 
 function totalFor(status) {
   return state.bookmarks.filter(b => b.status === status).length;
+}
+
+function allCategoriesCollapsed() {
+  return state.categories.length > 0 && state.categories.every(category => category.collapsed);
+}
+
+function toggleAllCategories() {
+  const collapse = !allCategoriesCollapsed();
+  state.categories.forEach(category => { category.collapsed = collapse; });
+  menuOpen = false;
+  persist();
+  toast(collapse ? 'All categories collapsed.' : 'All categories expanded.');
+}
+
+function sortCategoryAlphabetically(category) {
+  const matches = bookmark => bookmark.status === 'active' && bookmark.categoryId === category.id;
+  const sorted = state.bookmarks
+    .filter(matches)
+    .slice()
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true }));
+  if (sorted.length < 2) {
+    toast('Nothing to sort.');
+    render();
+    return;
+  }
+  let index = 0;
+  state.bookmarks = state.bookmarks.map(bookmark => matches(bookmark) ? sorted[index++] : bookmark);
+  persist();
+  toast('Sorted A–Z.');
 }
 
 function render() {
@@ -476,6 +530,7 @@ function renderMenu() {
     item('Hidden', totalFor('hidden') ? `${totalFor('hidden')} · Temporary` : 'Temporary', () => setView('hidden')),
     item('Archive', totalFor('archived') ? `${totalFor('archived')} · Long-term` : 'Long-term', () => setView('archived')),
     item('Add category', 'Organize', () => openCategorySheet()),
+    item(allCategoriesCollapsed() ? 'Expand all' : 'Collapse all', 'Sections', toggleAllCategories),
     item('Bookmarklet', 'Setup', () => openBookmarkletSheet()),
     item(isConnected() ? 'Dropbox' : 'Connect Dropbox', isConnected() ? 'Connected' : '', () => openDropboxSheet()),
   );
@@ -560,6 +615,7 @@ function renderPopover() {
   } else {
     const category = state.categories.find(c => c.id === popover.categoryId);
     if (!category) return;
+    action('Sort chats A–Z', () => sortCategoryAlphabetically(category));
     action('Rename category', () => openCategorySheet(category));
     action('Delete empty category', () => deleteCategory(category), 'danger');
   }
@@ -567,7 +623,14 @@ function renderPopover() {
   document.body.append(p);
 }
 
-function closeSheet() { sheet = null; render(); }
+function closeSheet() {
+  if (sheet?.type === 'add' && captureReturnUrl()) {
+    returnFromCapture();
+    return;
+  }
+  sheet = null;
+  render();
+}
 
 function renderSheet() {
   const scrim = document.createElement('div');
@@ -664,7 +727,7 @@ function sheetContent() {
     actions.className = 'sheet-actions';
     const save = document.createElement('button');
     save.type = 'button'; save.className = 'primary-button'; save.textContent = editing ? 'Save changes' : 'Add chat';
-    save.addEventListener('click', () => {
+    save.addEventListener('click', async () => {
       const cleanUrl = url.value.trim();
       let parsed;
       try { parsed = new URL(cleanUrl); if (!['http:','https:'].includes(parsed.protocol)) throw new Error(); }
@@ -686,8 +749,24 @@ function sheetContent() {
       } else {
         state.bookmarks.push({ id: uid('bm'), title: cleanTitle, url: cleanUrl, categoryId, status: 'active', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
       }
-      clearCaptureParams();
+      const returnTarget = !editing ? captureReturnUrl() : '';
       sheet = null;
+      if (returnTarget) {
+        persist({ sync: false });
+        if (isConnected()) {
+          setSyncMessage('Saving…');
+          try {
+            await uploadBoard(state);
+            setSyncMessage('✓ Synced');
+          } catch (error) {
+            console.error(error);
+            setSyncMessage('Offline · saved locally');
+          }
+        }
+        returnFromCapture();
+        return;
+      }
+      clearCaptureParams();
       persist();
       toast(editing ? 'Chat updated.' : 'Chat added.');
     });
@@ -726,7 +805,7 @@ function sheetContent() {
 
     const intro = document.createElement('div');
     intro.className = 'sheet-note bookmarklet-intro';
-    intro.textContent = 'Save to Chatboard captures the current page URL and title, then opens the Add chat modal. It never changes the conversation in ChatGPT.';
+    intro.textContent = 'Save to Chatboard temporarily opens Chatboard in the current tab. After you add or cancel, it returns to the same ChatGPT conversation. It never changes the conversation in ChatGPT.';
     frag.append(intro);
 
     const desktopTitle = document.createElement('div');
@@ -747,7 +826,7 @@ function sheetContent() {
 
     const desktopHelp = document.createElement('div');
     desktopHelp.className = 'sheet-note';
-    desktopHelp.textContent = 'Drag the button above to the bookmarks bar. While viewing a ChatGPT conversation, click it to send that chat to Chatboard.';
+    desktopHelp.textContent = 'Drag the button above to the bookmarks bar. While viewing a ChatGPT conversation, click it to open Chatboard in the same tab; Save or Cancel returns you to the conversation.';
     frag.append(desktopHelp);
 
     const mobileTitle = document.createElement('div');
@@ -762,7 +841,7 @@ function sheetContent() {
       'Create a normal Safari bookmark for this Chatboard page.',
       'Open Bookmarks, tap Edit, and choose that bookmark.',
       'Rename it “Save to Chatboard” and replace its address with the copied bookmarklet code.',
-      'While viewing a ChatGPT conversation in Safari, run Save to Chatboard from your bookmarks.'
+      'While viewing a ChatGPT conversation in Safari, run Save to Chatboard from your bookmarks. Save or Cancel returns to the conversation.'
     ]) {
       const li = document.createElement('li');
       li.textContent = text;
@@ -825,7 +904,7 @@ function sheetContent() {
 
 function clearCaptureParams() {
   const url = new URL(location.href);
-  ['add','url','title'].forEach(k => url.searchParams.delete(k));
+  ['add','url','title','return'].forEach(k => url.searchParams.delete(k));
   history.replaceState({}, '', url.toString());
 }
 

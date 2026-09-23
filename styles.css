@@ -68,11 +68,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .app-header {
+  position: sticky;
+  top: env(safe-area-inset-top);
+  z-index: 34;
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 48px;
   margin-bottom: clamp(26px, 6vw, 46px);
+  background: var(--bg);
 }
 .brand {
   display: inline-flex;
